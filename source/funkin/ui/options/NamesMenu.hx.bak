@@ -1,0 +1,21 @@
+import flixel.FlxButton;
+import flixel.FlxG;
+import flixel.FlxState;
+import funkin.ui.mainmenu.MainMenuState;
+
+class NamesMenu extends funkin.ui.options.OptionsState.Page
+{
+    override public function create():Void 
+    {
+        super.create();
+
+        var button = new FlxButton(100, 100, "Start Game", onStartClick);
+        add(button);
+    }
+
+    function onStartClick():Void 
+    {
+        FlxG.switchState(() -> new MainMenuState());
+    }
+
+}
