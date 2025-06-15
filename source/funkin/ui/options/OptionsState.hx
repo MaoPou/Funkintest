@@ -1,5 +1,6 @@
 package funkin.ui.options;
 
+import funkin.ui.transition.LoadingState;
 import funkin.ui.debug.latency.LatencyState;
 import flixel.FlxSprite;
 import flixel.FlxSubState;
@@ -164,8 +165,8 @@ class Page extends FlxGroup
     // This fucking auto-formatter sucks and i REFUSE to make this more than 1 variable
     if (canExit && (controls.BACK #if mobile || (backButton != null && TouchUtil.overlapsComplex(backButton) && TouchUtil.justPressed) #end))
     {
-      FunkinSound.playOnce(Paths.sound('cancelMenu'));
       exit();
+      FunkinSound.playOnce(Paths.sound('cancelMenu'));
     }
   }
 
@@ -213,7 +214,11 @@ class OptionsMenu extends Page
     #else
     createItem("CONTROLS", function() switchPage(Controls));
     createItem("INPUT OFFSETS", function() {
+      #if web
+      LoadingState.transitionToState(() -> new LatencyState());
+      #else
       FlxG.state.openSubState(new LatencyState());
+      #end
     });
     #end
 

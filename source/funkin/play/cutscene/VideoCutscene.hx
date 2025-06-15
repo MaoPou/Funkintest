@@ -10,8 +10,8 @@ import flixel.util.FlxTimer;
 #if html5
 import funkin.graphics.video.FlxVideo;
 #end
-#if (hxCodec || hxvlc)
-import hxcodec.flixel.FlxVideoSprite;
+#if hxvlc
+import funkin.graphics.video.FunkinVideoSprite;
 #end
 
 /**
@@ -25,8 +25,8 @@ class VideoCutscene
   #if html5
   static var vid:FlxVideo;
   #end
-  #if (hxCodec || hxvlc)
-  static var vid:FlxVideoSprite;
+  #if hxvlc
+  static var vid:FunkinVideoSprite;
   #end
 
   /**
@@ -81,7 +81,6 @@ class VideoCutscene
     // Trigger the cutscene. Don't play the song in the background.
     PlayState.instance.isInCutscene = true;
     PlayState.instance.camHUD.visible = false;
-    PlayState.instance.camCutscene.visible = true;
 
     // Display a black screen to hide the game while the video is playing.
     blackScreen = new FlxSprite(-200, -200).makeGraphic(FlxG.width * 2, FlxG.height * 2, FlxColor.BLACK);
@@ -93,8 +92,8 @@ class VideoCutscene
 
     #if html5
     playVideoHTML5(rawFilePath);
-    #elseif (hxCodec || hxvlc)
-    playVideoNative(rawFilePath);
+    #elseif hxvlc
+    playVideoNative(filePath);
     #else
     throw "No video support for this platform!";
     #end
@@ -102,7 +101,7 @@ class VideoCutscene
 
   public static function isPlaying():Bool
   {
-    #if (html5 || hxCodec || hxvlc)
+    #if (html5 || hxvlc)
     return vid != null;
     #else
     return false;
@@ -135,27 +134,28 @@ class VideoCutscene
   }
   #end
 
-  #if (hxCodec || hxvlc)
+  #if hxvlc
   static function playVideoNative(filePath:String):Void
   {
     // Video displays OVER the FlxState.
-    vid = new FlxVideoSprite(0, 0);
+    vid = new FunkinVideoSprite(0, 0);
 
     if (vid != null)
     {
       vid.zIndex = 0;
       vid.bitmap.onEndReached.add(finishVideo.bind(0.5));
-      vid.autoPause = false;
+      vid.autoPause = FlxG.autoPause;
 
       vid.cameras = [PlayState.instance.camCutscene];
 
       PlayState.instance.add(vid);
 
       PlayState.instance.refresh();
-      vid.play(filePath, false);
+
+      if (vid.load(filePath)) vid.play();
 
       // Resize videos bigger or smaller than the screen.
-      vid.bitmap.onTextureSetup.add(() -> {
+      vid.bitmap.onFormatSetup.add(() -> {
         vid.setGraphicSize(FlxG.width, FlxG.height);
         vid.updateHitbox();
         vid.x = 0;
@@ -182,7 +182,7 @@ class VideoCutscene
     }
     #end
 
-    #if (hxCodec || hxvlc)
+    #if hxvlc
     if (vid != null)
     {
       // Seek to the start of the video.
@@ -208,7 +208,7 @@ class VideoCutscene
     }
     #end
 
-    #if (hxCodec || hxvlc)
+    #if hxvlc
     if (vid != null)
     {
       vid.pause();
@@ -227,7 +227,7 @@ class VideoCutscene
     }
     #end
 
-    #if (hxCodec || hxvlc)
+    #if hxvlc
     if (vid != null)
     {
       vid.visible = false;
@@ -246,7 +246,7 @@ class VideoCutscene
     }
     #end
 
-    #if (hxCodec || hxvlc)
+    #if hxvlc
     if (vid != null)
     {
       vid.visible = true;
@@ -265,7 +265,7 @@ class VideoCutscene
     }
     #end
 
-    #if (hxCodec || hxvlc)
+    #if hxvlc
     if (vid != null)
     {
       vid.resume();
@@ -292,7 +292,7 @@ class VideoCutscene
     }
     #end
 
-    #if (hxCodec || hxvlc)
+    #if hxvlc
     if (vid != null)
     {
       vid.stop();
@@ -300,12 +300,11 @@ class VideoCutscene
     }
     #end
 
-    #if (html5 || hxCodec || hxvlc)
+    #if (html5 || hxvlc)
     vid.destroy();
     vid = null;
     #end
 
-    PlayState.instance.camCutscene.visible = true;
     PlayState.instance.camHUD.visible = true;
 
     FlxTween.tween(blackScreen, {alpha: 0}, transitionTime,

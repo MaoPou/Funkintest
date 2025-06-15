@@ -32,11 +32,14 @@ import openfl.media.Video;
 import openfl.net.NetStream;
 import funkin.api.newgrounds.NGio;
 import openfl.display.BlendMode;
+import funkin.save.Save;
 #if mobile
 import funkin.mobile.util.TouchUtil;
 import funkin.mobile.util.SwipeUtil;
 #end
 
+#if desktop
+#end
 class TitleState extends MusicBeatState
 {
   /**
@@ -232,7 +235,8 @@ class TitleState extends MusicBeatState
       {
         startingVolume: 0.0,
         overrideExisting: true,
-        restartTrack: true
+        restartTrack: false,
+        persist: true
       });
     var shouldFadeIn:Bool = (FlxG.sound.music != null);
     // Fade from 0.0 to 1 over 4 seconds
@@ -477,7 +481,12 @@ class TitleState extends MusicBeatState
             case 13:
               addMoreText('Friday');
             case 14:
-              addMoreText('Night');
+              // easter egg for when the game is trending with the wrong spelling
+              // the random intro text would be "trending--only on x"
+
+              if (curWacky[0] == "trending") addMoreText('Nigth');
+              else
+                addMoreText('Night');
             case 15:
               addMoreText('Funkin');
             case 16:
@@ -513,7 +522,8 @@ class TitleState extends MusicBeatState
       remove(ngSpr);
 
       FlxG.camera.flash(FlxColor.WHITE, initialized ? 1 : 4);
-      remove(credGroup);
+
+      if (credGroup != null) remove(credGroup);
       skippedIntro = true;
     }
   }

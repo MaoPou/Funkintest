@@ -43,12 +43,6 @@ class MusicBeatSubState extends FlxSubState implements IEventHandler
     return _conductorInUse = value;
   }
 
-  public function new(bgColor:FlxColor = FlxColor.TRANSPARENT)
-  {
-    super();
-    this.bgColor = bgColor;
-  }
-
   var controls(get, never):Controls;
 
   inline function get_controls():Controls
@@ -100,6 +94,20 @@ class MusicBeatSubState extends FlxSubState implements IEventHandler
   }
   #end
 
+  public function new(bgColor:FlxColor = FlxColor.TRANSPARENT)
+  {
+    super();
+    this.bgColor = bgColor;
+
+    initCallbacks();
+  }
+
+  function initCallbacks()
+  {
+    subStateOpened.add(onOpenSubStateComplete);
+    subStateClosed.add(onCloseSubStateComplete);
+  }
+
   override function create():Void
   {
     super.create();
@@ -108,6 +116,8 @@ class MusicBeatSubState extends FlxSubState implements IEventHandler
 
     Conductor.beatHit.add(this.beatHit);
     Conductor.stepHit.add(this.stepHit);
+
+    initConsoleHelpers();
   }
 
   public override function destroy():Void
@@ -129,9 +139,6 @@ class MusicBeatSubState extends FlxSubState implements IEventHandler
     // Emergency exit button.
     if (FlxG.keys.justPressed.F4) FlxG.switchState(() -> new MainMenuState());
 
-    // This can now be used in EVERY STATE YAY!
-    if (FlxG.keys.justPressed.F5) debug_refreshModules();
-
     // Display Conductor info in the watch window.
     FlxG.watch.addQuick("musicTime", FlxG.sound.music?.time ?? 0.0);
     Conductor.watchQuick(conductorInUse);
@@ -139,7 +146,9 @@ class MusicBeatSubState extends FlxSubState implements IEventHandler
     dispatchEvent(new UpdateScriptEvent(elapsed));
   }
 
-  function debug_refreshModules()
+  public function initConsoleHelpers():Void {}
+
+  function reloadAssets()
   {
     PolymodHandler.forceReloadAssets();
 

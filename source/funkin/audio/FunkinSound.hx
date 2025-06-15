@@ -337,6 +337,8 @@ class FunkinSound extends FlxSound implements ICloneable<FunkinSound>
       if (songMusicData != null)
       {
         Conductor.instance.mapTimeChanges(songMusicData.timeChanges);
+
+        if (songMusicData.looped != null && params.loop == null) params.loop = songMusicData.looped;
       }
       else
       {
@@ -385,13 +387,15 @@ class FunkinSound extends FlxSound implements ICloneable<FunkinSound>
     }
     else
     {
-      var music = FunkinSound.load(pathToUse, params?.startingVolume ?? 1.0, params.loop ?? true, false, true);
+      var music = FunkinSound.load(pathToUse, params?.startingVolume ?? 1.0, params.loop ?? true, false, true, params.persist ?? false, params.onComplete);
       if (music != null)
       {
         FlxG.sound.music = music;
 
         // Prevent repeat update() and onFocus() calls.
         FlxG.sound.list.remove(FlxG.sound.music);
+
+        if (FlxG.sound.music != null && params.onLoad != null) params.onLoad();
 
         return true;
       }
@@ -423,12 +427,13 @@ class FunkinSound extends FlxSound implements ICloneable<FunkinSound>
    * @param autoDestroy     Whether to destroy this sound when it finishes playing.
    *                          Leave this value set to `false` if you want to re-use this `FunkinSound` instance.
    * @param autoPlay        Whether to play the sound immediately or wait for a `play()` call.
+   * @param persist         Whether to keep this `FunkinSound` between states, or destroy it.
    * @param onComplete      Called when the sound finished playing.
    * @param onLoad          Called when the sound finished loading.  Called immediately for succesfully loaded embedded sounds.
    * @return A `FunkinSound` object, or `null` if the sound could not be loaded.
    */
   public static function load(embeddedSound:FlxSoundAsset, volume:Float = 1.0, looped:Bool = false, autoDestroy:Bool = false, autoPlay:Bool = false,
-      ?onComplete:Void->Void, ?onLoad:Void->Void):Null<FunkinSound>
+      persist:Bool = false, ?onComplete:Void->Void, ?onLoad:Void->Void):Null<FunkinSound>
   {
     @:privateAccess
     if (SoundMixer.__soundChannels.length >= SoundMixer.MAX_ACTIVE_CHANNELS)
@@ -455,7 +460,7 @@ class FunkinSound extends FlxSound implements ICloneable<FunkinSound>
     if (autoPlay) sound.play();
     sound.volume = volume;
     sound.group = FlxG.sound.defaultSoundGroup;
-    sound.persist = true;
+    sound.persist = persist;
 
     // Make sure to add the sound to the list.
     // If it's already in, it won't get re-added.
@@ -488,7 +493,7 @@ class FunkinSound extends FlxSound implements ICloneable<FunkinSound>
     var promise:lime.app.Promise<Null<FunkinSound>> = new lime.app.Promise<Null<FunkinSound>>();
 
     // split the path and get only after first :
-    // we are bypassing the openfl/lime asset library fuss
+    // we are bypassing the openfl/lime asset library fuss on web only
     #if web
     path = Paths.stripLibrary(path);
     #end
@@ -506,7 +511,7 @@ class FunkinSound extends FlxSound implements ICloneable<FunkinSound>
       });
 
       soundRequest.future.onComplete(function(partialSound) {
-        var snd = FunkinSound.load(partialSound, volume, looped, autoDestroy, autoPlay, onComplete, onLoad);
+        var snd = FunkinSound.load(partialSound, volume, looped, autoDestroy, autoPlay, false, onComplete, onLoad);
         promise.complete(snd);
       });
     }
@@ -532,21 +537,23 @@ class FunkinSound extends FlxSound implements ICloneable<FunkinSound>
    * Play a sound effect once, then destroy it.
    * @param key
    * @param volume
-   * @return static function construct():FunkinSound
+   * @return A `FunkinSound` object, or `null` if the sound could not be loaded.
    */
-  public static function playOnce(key:String, volume:Float = 1.0, ?onComplete:Void->Void, ?onLoad:Void->Void):Void
+  public static function playOnce(key:String, volume:Float = 1.0, ?onComplete:Void->Void, ?onLoad:Void->Void):Null<FunkinSound>
   {
-    var result = FunkinSound.load(key, volume, false, true, true, onComplete, onLoad);
+    var result:Null<FunkinSound> = FunkinSound.load(key, volume, false, true, true, false, onComplete, onLoad);
+    return result;
   }
 
   /**
    * Stop all sounds in the pool and allow them to be recycled.
    */
-  public static function stopAllAudio(musicToo:Bool = false):Void
+  public static function stopAllAudio(musicToo:Bool = false, persistToo:Bool = false):Void
   {
     for (sound in pool)
     {
       if (sound == null) continue;
+      if (!persistToo && sound.persist) continue;
       if (!musicToo && sound == FlxG.sound.music) continue;
       sound.destroy();
     }
@@ -560,6 +567,14 @@ class FunkinSound extends FlxSound implements ICloneable<FunkinSound>
     FlxG.sound.list.add(sound);
 
     return sound;
+  }
+
+  /**
+   * Produces a string representation suitable for debugging.
+   */
+  public override function toString():String
+  {
+    return 'FunkinSound(${this._label})';
   }
 }
 
@@ -611,6 +626,11 @@ typedef FunkinSoundPlayMusicParams =
   var ?pathsFunction:PathsFunction;
 
   var ?partialParams:PartialSoundParams;
+
+  /**
+   * Whether the sound should be destroyed on state switches
+   */
+  var ?persist:Bool;
 
   var ?onComplete:Void->Void;
   var ?onLoad:Void->Void;

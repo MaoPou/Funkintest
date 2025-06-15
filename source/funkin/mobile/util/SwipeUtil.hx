@@ -59,25 +59,7 @@ class SwipeUtil
     #if FLX_POINTER_INPUT
     for (swipe in FlxG.swipes)
     {
-      if (swipe.degrees > -135 && swipe.degrees < -45 && swipe.distance > 20) return true;
-    }
-    #end
-
-    return false;
-  }
-
-  /**
-   * Determines if there is a left swipe in the FlxG.swipes array.
-   *
-   * @return True if any swipe direction is left, false otherwise.
-   */
-  @:noCompletion
-  static function get_swipeLeft():Bool
-  {
-    #if FLX_POINTER_INPUT
-    for (swipe in FlxG.swipes)
-    {
-      if ((swipe.degrees > 135 || swipe.degrees < -135) && swipe.distance > 20) return true;
+      return (swipe.degrees > -135 && swipe.degrees < -45 && swipe.distance > 20);
     }
     #end
 
@@ -90,12 +72,30 @@ class SwipeUtil
    * @return True if any swipe direction is right, false otherwise.
    */
   @:noCompletion
+  static function get_swipeLeft():Bool
+  {
+    #if FLX_POINTER_INPUT
+    for (swipe in FlxG.swipes)
+    {
+      return (swipe.degrees > -45 && swipe.degrees < 45 && swipe.distance > 20);
+    }
+    #end
+
+    return false;
+  }
+
+  /**
+   * Determines if there is a left swipe in the FlxG.swipes array.
+   *
+   * @return True if any swipe direction is left, false otherwise.
+   */
+  @:noCompletion
   static function get_swipeRight():Bool
   {
     #if FLX_POINTER_INPUT
     for (swipe in FlxG.swipes)
     {
-      if (swipe.degrees > -45 && swipe.degrees < 45 && swipe.distance > 20) return true;
+      return ((swipe.degrees > 135 || swipe.degrees < -135) && swipe.distance > 20);
     }
     #end
 
@@ -113,7 +113,7 @@ class SwipeUtil
     #if FLX_POINTER_INPUT
     for (swipe in FlxG.swipes)
     {
-      if (swipe.degrees > 45 && swipe.degrees < 135 && swipe.distance > 20) return true;
+      return (swipe.degrees > 45 && swipe.degrees < 135 && swipe.distance > 20);
     }
     #end
 
